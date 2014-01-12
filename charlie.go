@@ -65,7 +65,6 @@ func (p *TokenParams) Validate(id, token string) error {
 
 	nonce := data[0:p.aead.NonceSize()]
 	data = data[p.aead.NonceSize():]
-
 	b, err := p.aead.Open(nil, nonce, data, []byte(id))
 	if err != nil {
 		return ErrInvalidToken
