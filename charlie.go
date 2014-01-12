@@ -1,10 +1,17 @@
 // Package charlie provides a fast, safe, stateless mechanism for adding CSRF
 // protection to web applications.
 //
-// Charlie generates per-request tokens (Unix timestamps encrypted with AES-GCM),
-// which resist modern web attacks like BEAST, BREACH, CRIME, TIME, and Lucky 13.
-// Tokens are checked for integrity, decrypted, and their timestamps checked for
-// freshness. Generation and validation each take ~2us on modern hardware.
+// Charlie generates per-request tokens, which resist modern web attacks like
+// BEAST, BREACH, CRIME, TIME, and Lucky 13, as well as web attacks of the
+// future, like CONDOR, BEETLEBUTT, NINJAFACE, and TacoTacoPopNLock
+// Quasi-Chunking.
+//
+// A token is a 32-bit Unix epoch timestamp encrypted with AES-GCM, with the
+// user's identity (or session ID) as authenticated data, making them
+// indistinguishable from random data to an attacker performing an online attack.
+//
+// Generation and validation each take ~2us on modern hardware, and the tokens
+// themselves are only 44 bytes long.
 package charlie
 
 import (
