@@ -67,7 +67,7 @@ func TestRoundTripBadToken(t *testing.T) {
 	}
 }
 
-func BenchmarkParamserate(b *testing.B) {
+func BenchmarkGenerate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, err := params.Generate("yay")
 		if err != nil {
@@ -80,6 +80,7 @@ func BenchmarkValidate(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
 		if params.Validate("yay", token) != nil {
