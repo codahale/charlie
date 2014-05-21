@@ -68,6 +68,8 @@ func TestRoundTripBadToken(t *testing.T) {
 }
 
 func BenchmarkGenerate(b *testing.B) {
+	b.ReportAllocs()
+
 	for i := 0; i < b.N; i++ {
 		_, err := params.Generate("yay")
 		if err != nil {
@@ -76,6 +78,7 @@ func BenchmarkGenerate(b *testing.B) {
 	}
 }
 func BenchmarkValidate(b *testing.B) {
+	b.ReportAllocs()
 	token, err := params.Generate("yay")
 	if err != nil {
 		b.Fatal(err)
