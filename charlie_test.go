@@ -2,6 +2,7 @@ package charlie
 
 import (
 	"encoding/base64"
+	"sync"
 	"testing"
 	"time"
 )
@@ -21,6 +22,46 @@ func TestRoundTrip(t *testing.T) {
 	if err := params.Validate("woo", token); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestRoundTripConcurrent(t *testing.T) {
+	tokens := make(chan string, 100)
+
+	producers := 10
+	wgP := new(sync.WaitGroup)
+	wgP.Add(producers)
+
+	consumers := 10
+	wgC := new(sync.WaitGroup)
+	wgC.Add(consumers)
+
+	for i := 0; i < producers; i++ {
+		go func() {
+			defer wgP.Done()
+			for j := 0; j < 1000; j++ {
+				token, err := params.Generate("woo")
+				if err != nil {
+					t.Fatal(err)
+				}
+				tokens <- token
+			}
+		}()
+	}
+
+	for i := 0; i < consumers; i++ {
+		go func() {
+			defer wgC.Done()
+			for token := range tokens {
+				if err := params.Validate("woo", token); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}()
+	}
+
+	wgP.Wait()
+	close(tokens)
+	wgC.Wait()
 }
 
 func TestRoundTripExpired(t *testing.T) {
