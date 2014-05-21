@@ -37,7 +37,7 @@ func TestRoundTripExpired(t *testing.T) {
 	}()
 
 	if err := params.Validate("woo", token); err != ErrInvalidToken {
-		t.Fatal("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Expected ErrInvalidToken but got %v", err)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestRoundTripBadEncoding(t *testing.T) {
 	}
 
 	if err := params.Validate("woo", "A"+token); err != ErrInvalidToken {
-		t.Fatal("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Expected ErrInvalidToken but got %v", err)
 	}
 }
 
@@ -63,7 +63,7 @@ func TestRoundTripBadToken(t *testing.T) {
 	token = base64.URLEncoding.EncodeToString(b)
 
 	if err := params.Validate("woo", token); err != ErrInvalidToken {
-		t.Fatal("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Expected ErrInvalidToken but got %v", err)
 	}
 }
 
