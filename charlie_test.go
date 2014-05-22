@@ -2,15 +2,47 @@ package charlie
 
 import (
 	"encoding/base64"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
 )
 
-var params *TokenParams
+func Example() {
+	// create a new TokenParams
+	params, err := New([]byte{
+		0x05, 0xd8, 0x4b, 0x3c, 0x5f, 0xf0, 0xd0, 0x86, // 128-bit AES key
+		0x6a, 0x08, 0x6e, 0xa9, 0x0b, 0x4a, 0xd4, 0x02,
+	})
+	if err != nil {
+		panic(err)
+	}
 
-func init() {
-	params, _ = New([]byte("ayellowsubmarine"))
+	http.HandleFunc("/secure", func(w http.ResponseWriter, r *http.Request) {
+		// establish that the request is authenticated and resolve a principal
+		user := authenticate(r)
+
+		// validate the token, if any
+		token := r.Header.Get("CSRF-Token")
+		if err := params.Validate(user, token); err != nil {
+			http.Error(w, "Invalid CSRF token", http.StatusBadRequest)
+			return
+		}
+
+		// generate a new token for the response
+		token, err := params.Generate(user)
+		if err != nil {
+			panic(err)
+		}
+		w.Header().Add("CSRF-Token", token)
+
+		// handle actual request
+		// ...
+	})
+}
+
+func authenticate(r *http.Request) string {
+	return ""
 }
 
 func TestRoundTrip(t *testing.T) {
@@ -131,4 +163,14 @@ func BenchmarkValidate(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+var params *TokenParams
+
+func init() {
+	p, err := New([]byte("ayellowsubmarine"))
+	if err != nil {
+		panic(err)
+	}
+	params = p
 }

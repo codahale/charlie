@@ -4,11 +4,15 @@
 // Charlie generates per-request tokens, which resist modern web attacks like
 // BEAST, BREACH, CRIME, TIME, and Lucky 13, as well as web attacks of the
 // future, like CONDOR, BEETLEBUTT, NINJAFACE, and TacoTacoPopNLock
-// Quasi-Chunking.
+// Quasi-Chunking. In addition, the fact that Charlie tokens are stateless means
+// their usage is dramatically simpler than most CSRF countermeasures--simply
+// return a token with each response and require a token with each authenticated
+// request.
 //
 // A token is a 32-bit Unix epoch timestamp encrypted with AES-GCM, with the
 // user's identity (or session ID) as authenticated data, making them
-// indistinguishable from random data to an attacker performing an online attack.
+// indistinguishable from random data to an attacker performing an online
+// attack.
 //
 // Generation and validation each take ~2us on modern hardware, and the tokens
 // themselves are only 44 bytes long.
