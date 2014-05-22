@@ -43,7 +43,12 @@ func New(key []byte) (*TokenParams, error) {
 	if err != nil {
 		return nil, err
 	}
-	aead, _ := cipher.NewGCM(block) // AES-GCM works just fine, ignoring this.
+
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+
 	return &TokenParams{
 		aead:   aead,
 		MaxAge: 10 * time.Minute,
