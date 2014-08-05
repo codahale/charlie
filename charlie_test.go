@@ -10,49 +10,41 @@ import (
 
 func Example() {
 	// create a new TokenParams
-	params, err := New([]byte{
-		0x05, 0xd8, 0x4b, 0x3c, 0x5f, 0xf0, 0xd0, 0x86, // 128-bit AES key
-		0x6a, 0x08, 0x6e, 0xa9, 0x0b, 0x4a, 0xd4, 0x02,
-	})
-	if err != nil {
-		panic(err)
-	}
+	params := New([]byte("yay for dumbledore"))
 
 	http.HandleFunc("/secure", func(w http.ResponseWriter, r *http.Request) {
-		// establish that the request is authenticated and resolve a principal
-		user := authenticate(r)
+		sessionID := r.Header.Get("Session-ID")
 
 		// validate the token, if any
 		token := r.Header.Get("CSRF-Token")
-		if err := params.Validate(user, token); err != nil {
+		if err := params.Validate(sessionID, token); err != nil {
 			http.Error(w, "Invalid CSRF token", http.StatusBadRequest)
 			return
 		}
 
 		// generate a new token for the response
-		token, err := params.Generate(user)
-		if err != nil {
-			panic(err)
-		}
-		w.Header().Add("CSRF-Token", token)
+		w.Header().Add("CSRF-Token", params.Generate(sessionID))
 
 		// handle actual request
 		// ...
 	})
 }
 
-func authenticate(r *http.Request) string {
-	return ""
-}
+var params = New([]byte("ayellowsubmarine"))
 
 func TestRoundTrip(t *testing.T) {
-	token, err := params.Generate("woo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	token := params.Generate("woo")
 
 	if err := params.Validate("woo", token); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestTokenLength(t *testing.T) {
+	token := params.Generate("woo")
+
+	if v, want := len(token), 28; v != want {
+		t.Errorf("Token length was %d, but expected %d", v, want)
 	}
 }
 
@@ -71,11 +63,7 @@ func TestRoundTripConcurrent(t *testing.T) {
 		go func() {
 			defer wgP.Done()
 			for j := 0; j < 1000; j++ {
-				token, err := params.Generate("woo")
-				if err != nil {
-					t.Fatal(err)
-				}
-				tokens <- token
+				tokens <- params.Generate("woo")
 			}
 		}()
 	}
@@ -97,80 +85,58 @@ func TestRoundTripConcurrent(t *testing.T) {
 }
 
 func TestRoundTripExpired(t *testing.T) {
-	token, err := params.Generate("woo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	token := params.Generate("woo")
 
-	timer = func() time.Time {
+	params.timer = func() time.Time {
 		return time.Now().Add(20 * time.Minute)
 	}
 	defer func() {
-		timer = time.Now
+		params.timer = time.Now
 	}()
 
 	if err := params.Validate("woo", token); err != ErrInvalidToken {
-		t.Fatalf("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Error was %v, but expected ErrInvalidToken", err)
 	}
 }
 
 func TestRoundTripBadEncoding(t *testing.T) {
-	token, err := params.Generate("woo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	token := params.Generate("woo")
 
 	if err := params.Validate("woo", "A"+token); err != ErrInvalidToken {
-		t.Fatalf("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Error was %v, but expected ErrInvalidToken", err)
 	}
 }
 
 func TestRoundTripBadToken(t *testing.T) {
-	token, err := params.Generate("woo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	token := params.Generate("woo")
 
 	b, _ := base64.URLEncoding.DecodeString(token)
 	b[0] ^= 12
 	token = base64.URLEncoding.EncodeToString(b)
 
 	if err := params.Validate("woo", token); err != ErrInvalidToken {
-		t.Fatalf("Expected ErrInvalidToken but got %v", err)
+		t.Fatalf("Error was %v, but expected ErrInvalidToken", err)
 	}
 }
 
 func BenchmarkGenerate(b *testing.B) {
 	b.ReportAllocs()
-
-	for i := 0; i < b.N; i++ {
-		_, err := params.Generate("yay")
-		if err != nil {
-			b.Fatal(err)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			params.Generate("yay")
 		}
-	}
+	})
 }
 func BenchmarkValidate(b *testing.B) {
+	token := params.Generate("yay")
 	b.ReportAllocs()
-	token, err := params.Generate("yay")
-	if err != nil {
-		b.Fatal(err)
-	}
 	b.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		if params.Validate("yay", token) != nil {
-			b.Fatal(err)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if err := params.Validate("yay", token); err != nil {
+				b.Fatal(err)
+			}
 		}
-	}
-}
-
-var params *TokenParams
-
-func init() {
-	p, err := New([]byte("ayellowsubmarine"))
-	if err != nil {
-		panic(err)
-	}
-	params = p
+	})
 }
