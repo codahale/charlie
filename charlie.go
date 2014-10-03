@@ -21,7 +21,6 @@ package charlie
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -69,7 +68,7 @@ func (p *Params) Validate(id, token string) error {
 
 	mac := data[dataSize:][:macSize]
 	data = data[:dataSize]
-	if subtle.ConstantTimeCompare(hmacSHA256(p.key, data, id), mac) != 1 {
+	if hmac.Equal(hmacSHA256(p.key, data, id), mac) {
 		return ErrInvalidToken
 	}
 
