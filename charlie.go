@@ -68,7 +68,7 @@ func (p *Params) Validate(id, token string) error {
 
 	mac := data[dataSize:][:macSize]
 	data = data[:dataSize]
-	if hmac.Equal(hmacSHA256(p.key, data, id), mac) {
+	if !hmac.Equal(hmacSHA256(p.key, data, id), mac) {
 		return ErrInvalidToken
 	}
 
