@@ -48,6 +48,12 @@ func TestTokenLength(t *testing.T) {
 	}
 }
 
+func TestEmptyToken(t *testing.T) {
+	if err := params.Validate("woo", ""); err != ErrInvalidToken {
+		t.Errorf("Error was %v, but expected ErrInvalidToken", err)
+	}
+}
+
 func TestRoundTripConcurrent(t *testing.T) {
 	tokens := make(chan string, 100)
 
