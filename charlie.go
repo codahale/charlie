@@ -62,7 +62,7 @@ func (p *Params) Generate(id string) string {
 // Validate validates the given token for the given user.
 func (p *Params) Validate(id, token string) error {
 	data, err := base64.URLEncoding.DecodeString(token)
-	if err != nil {
+	if err != nil || len(data) < dataSize+macSize {
 		return ErrInvalidToken
 	}
 
